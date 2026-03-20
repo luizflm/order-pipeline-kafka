@@ -1,0 +1,94 @@
+services:
+  order-app:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: order-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./order-service:/var/www
+    depends_on:
+      - order-db
+    networks:
+      - order-pipeline
+
+  order-nginx:
+    image: nginx:alpine
+    container_name: order-nginx
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    volumes:
+      - ./order-service:/var/www
+      - ./order-service/docker/nginx/:/etc/nginx/conf.d/
+    depends_on:
+      - order-app
+    networks:
+      - order-pipeline
+
+  order-db:
+    image: postgres:16-alpine
+    container_name: order-db
+    restart: unless-stopped
+    environment:
+      DB_HOST: order-db
+      DB_PORT: 5432
+      POSTGRES_DB: order_service
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - ./.docker/order-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - order-pipeline
+
+  shipping-app:
+    build:
+      context: ./shipping-service
+      dockerfile: Dockerfile
+    container_name: shipping-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./shipping-service:/var/www
+    depends_on:
+      - shipping-db
+    networks:
+      - order-pipeline
+
+  shipping-nginx:
+    image: nginx:alpine
+    container_name: shipping-nginx
+    restart: unless-stopped
+    ports:
+      - "8002:80"
+    volumes:
+      - ./shipping-service:/var/www
+      - ./shipping-service/docker/nginx/:/etc/nginx/conf.d/
+    depends_on:
+      - shipping-app
+    networks:
+      - order-pipeline
+
+  shipping-db:
+    image: postgres:16-alpine
+    container_name: shipping-db
+    restart: unless-stopped
+    environment:
+      DB_HOST: shipping-db
+      DB_PORT: 5432
+      POSTGRES_DB: shipping_service
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - ./.docker/shipping-db:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"    
+    networks:
+      - order-pipeline
+
+networks:
+  order-pipeline:
+    driver: bridge
