@@ -25,7 +25,9 @@ class Order extends Model
     {
         return [
             'status' => OrderStatus::class,
-            'total'  => 'float',
+            'total'  => 'decimal:2',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 
