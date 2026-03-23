@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\CarbonInterface;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property-read int $id
@@ -28,6 +29,7 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory;
     use Notifiable;
+    use HasApiTokens;
 
     protected function casts(): array
     {
