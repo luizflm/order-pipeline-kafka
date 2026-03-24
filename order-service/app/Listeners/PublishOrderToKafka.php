@@ -3,14 +3,16 @@
 namespace App\Listeners;
 
 use App\Events\OrderPlaced;
+use App\Kafka\Producers\KafkaProducer;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PublishOrderToKafka
 {
     /**
      * Create the event listener.
      */
-    public function __construct()
+    public function __construct(private KafkaProducer $producer)
     {
         //
     }
@@ -20,10 +22,15 @@ class PublishOrderToKafka
      */
     public function handle(OrderPlaced $event): void
     {
-        $order = $event->order;
+        try {
+            $order = $event->order;
 
-        $message = [
-            'data'  => [
+            $orderItems = $order->items->map(fn ($item) => [
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity
+            ])->toArray();
+
+            $payload = [
                 'order_id' => $order->id,
                 'total' => $order->total,
                 'customer' => [
@@ -32,13 +39,19 @@ class PublishOrderToKafka
                     'address' => $order->user->address,
                     'city' => $order->user->city,
                 ],
-                'items' => $order->items->map(fn ($item) => [
-                    'product_id' => $item->product_id,
-                    'quantity'        => $item->quantity
-                ])
-            ]
-        ];
+                'items' => $orderItems
+            ];
 
-        Log::info("Order {$order->id} sent to Kafka topic.");
+            $this->producer->send(
+                topic: 'order.placed',
+                payload: $payload,
+                key: (string) $order->id
+            );
+
+            Log::info("Order {$order->id} sent to Kafka topic.");
+        } catch (Throwable $e) {
+            $message = $e->getMessage();
+            Log::error("Error publishing order to kafka: {$message}");
+        }
     }
 }
