@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
+    librdkafka-dev \
     zip \
     unzip \
     && apt-get clean \
@@ -18,6 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd sockets
+
+# Install and enable rdkafka extension
+RUN pecl install rdkafka && docker-php-ext-enable rdkafka
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
