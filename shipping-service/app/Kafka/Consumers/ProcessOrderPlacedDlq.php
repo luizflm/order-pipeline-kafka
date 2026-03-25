@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Consumers;
+namespace App\Kafka\Consumers;
 
 use App\Actions\CreateShipment;
 use Illuminate\Console\Command;

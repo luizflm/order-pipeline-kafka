@@ -1,33 +1,32 @@
 <?php
 
-namespace App\Console\Commands\Consumers;
+namespace App\Kafka\Consumers;
 
-use App\Actions\CreateShipment;
+use App\Actions\UpdateOrderStatus;
 use Illuminate\Console\Command;
 use Junges\Kafka\Contracts\MessageConsumer;
 use Junges\Kafka\Facades\Kafka;
 use Junges\Kafka\Message\ConsumedMessage;
 use Throwable;
 
-class OrderPlacedConsumer extends Command
+class ShipmentStatusUpdatedConsumer extends Command
 {
-    protected $signature = 'kafka:consume-order-placed';
+    protected $signature = 'kafka:consume-shipment-status-updated';
     protected $description = 'Consume Kafka topic messages';
 
-    public function __construct(private CreateShipment $action) 
+    public function __construct(private UpdateOrderStatus $action) 
     {
         parent::__construct();
     }
 
     public function handle(): int
     {
-        $this->info('Initializing consumer of template requested...');
+        $this->info('Initializing consumer of shipment status updated');
 
         Kafka::consumer()
-            ->subscribe('order.placed')
-            ->withDlq('order.placed-dlq')
+            ->subscribe('shipment.updated')
             ->withManualCommit()
-            ->withConsumerGroupId('shipping_service_consumer')
+            ->withConsumerGroupId('order_service_consumer')
             ->withHandler(function (ConsumedMessage $message, MessageConsumer $consumer) {
                 try {
                     $data = $message->getBody();
@@ -36,9 +35,9 @@ class OrderPlacedConsumer extends Command
 
                     $consumer->commit($message);
 
-                    $this->info("Order processed: " . $data['order_id']);
+                    $this->info("Order #{$data['order_id']} status updated to: {$data['status']}");
                 } catch (Throwable $e) {
-                    $this->error("Failed to process order, sending to DLQ. Message: " . $e->getMessage());
+                    $this->error("Failed to process shipment status update, sending to DLQ. Message: " . $e->getMessage());
                     throw $e;
                 }
             })

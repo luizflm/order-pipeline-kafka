@@ -34,6 +34,8 @@ class Shipment extends Model
             'estimated_at' => 'datetime',
             'shipped_at'   => 'datetime',
             'delivered_at' => 'datetime',
+            'created_at'   => 'datetime',
+            'updated_at'   => 'datetime',
         ];
     }
 }
